@@ -71,9 +71,9 @@
     var key = event.key || event.keyCode;
     if (key === " " || key === 32) {
       event.preventDefault();
-      atem.cutTransition(currentME);
+      atem.cut(currentME);
     } else if (key === "Enter" || key === 13) {
-      atem.cutTransition(currentME);
+      atem.cut(currentME);
       atem.autoTransition(currentME);
     } else if (key >= "0" && key <= "9") {
       if (event.getModifierState("Control")) {
@@ -103,9 +103,9 @@
 </header>
 
 <div id="atem" class="screen">
-  {#if Object.keys(atem.state.video.ME).length > 1}
+  {#if Object.keys(atem.state.video.mixEffects).length > 1}
   <div class="button-group horizontal mix-effect-buttons" role="group" aria-label="Mix Effects">
-  {#each Object.values(atem.state.video.ME) as ME}
+  {#each Object.values(atem.state.video.mixEffects) as ME}
     <button type="button" class="gray-button"
       class:active={currentME == ME.index}
       on:click={e => {currentME = ME.index}}>
@@ -113,7 +113,7 @@
   {/each}
   </div>
   {/if}
-  {#each atem.state.video.ME[currentME] && [atem.state.video.ME[currentME]] as ME}
+  {#each atem.state.video.mixEffects[currentME] && [atem.state.video.mixEffects[currentME]] as ME}
   <section class="channels">
     <h3>Mix Effects {ME.index+1} Program & Preview</h3>
     <div class="well row-buttons">
@@ -132,18 +132,18 @@
   <section class="transition">
     <h3>Transition</h3>
     <div class="well row-buttons">
-      <div class="button" on:click={e=>atem.cutTransition(ME.index)}>
+      <div class="button" on:click={e=>atem.cut(ME.index)}>
         <p>CUT</p>
       </div>
       <div class="button"
-        class:red={ME.transitionPosition > 0}
+        class:red={ME.transitionPosition.inTransition}
         on:click={e=>atem.autoTransition(ME.index)}>
         <p>AUTO</p>
       </div>
       <input class="slider" type="range"
         min="0" max="10000" step="100"
-        bind:value={ME.transitionPosition}
-        on:input={e => atem.setTransitionPosition(ME.transitionPosition, ME.index)}
+        bind:value={ME.transitionPosition.handlePosition}
+        on:input={e => atem.setTransitionPosition(ME.transitionPosition.handlePosition, ME.index)}
         />
     </div>
   </section>
@@ -159,7 +159,7 @@
       {#each ME.upstreamKeyers as keyer, i}
         <div class="button"
           class:red={keyer.onAir}
-          on:click={e => atem.setkeyerOnAir(!keyer.onAir, ME.index, keyer.upstreamKeyerId)}>
+          on:click={e => atem.setUpstreamKeyerOnAir(!keyer.onAir, ME.index, keyer.upstreamKeyerId)}>
           <p>ON<br />AIR</p>
         </div>
         <div class="button"
@@ -205,7 +205,7 @@
       {/if}
       <div class="button"
         class:yellow={ME.transitionPreview}
-        on:click={e=>atem.previewTransition(ME.index)}>
+        on:click={e=>atem.togglePreviewTransition(ME.index)}>
         <p>PREV<br />TRAN</p>
       </div>
     </div>
@@ -240,7 +240,7 @@
       </div>
       <div class="button"
         class:red={atem.state.video.downstreamKeyers[key].inTransition}
-        on:click={e => atem.autoDownstreamKey(+key, !atem.state.video.downstreamKeyers[key].isTowardsOnAir)}>
+        on:click={e => atem.autoDownstreamKey(+key, !atem.state.video.downstreamKeyers[key].onAir)}>
         <p>AUTO</p>
       </div>
     </div>
@@ -253,11 +253,11 @@
   <h2>Media</h2>
   {#each atem.state.media.players as player, i}
     <div class="media-thumb well"
-      on:drop={e=>atem.uploadMediaFile(e.dataTransfer.files[0], i)}>
+      on:drop={e=>atem.uploadStill(e.dataTransfer.files[0], i)}>
       <img alt={atem.state.media.stillPool[player.stillIndex].fileName || "Upload Media "+(i+1)}
         on:click={e=>e.target.parentNode.querySelector('input').click()}
       />
-      <input type="file" name="media" on:change={e=>atem.uploadMediaFile(e.target.files[0], i)}/>
+      <input type="file" name="media" on:change={e=>atem.uploadStill(e.target.files[0], i)}/>
       <select class="media-still-select"
         value={player.stillIndex}
         on:change={e=>atem.setPlayerStillSource(e.target.value, i)}>
@@ -319,7 +319,7 @@
         on:click={e=>{
         let name;
         if (name = prompt('Name:', atem.state.macro.macroProperties[activeMacro].name))
-            atem.macroRecord(activeMacro, name, '')
+            atem.macroStartRecord(activeMacro, name, '')
           }}>
         <Feather icon="plus-circle" size=14/> Record
       </div>

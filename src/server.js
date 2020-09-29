@@ -21,35 +21,40 @@ for (var switcher of config.switchers) {
   atem.connected = false;
   switchers.push(atem);
 
-  atem.on('stateChanged', function (state, path) {
-    if (path != 'info.lastTime') {
-      // console.log('atem stateChanged', path)
-      let paths = ['state']
-      for (let a of path.split('.')) {
-        const parent = state;
-        if (Array.isArray(state)) {
-          state = state[+a];
-        } else {
-          state = state[a];
-        }
-        if (typeof state === 'undefined') {
-          if (a === 'transition') {
-            // XXX - maybe it should be fixed in atem-connection lib
-            a = 'transitionPosition'
-            state = parent[a];
+  atem.on('stateChanged', function (atemstate, paths) {
+    // console.log('atem paths', paths);
+    for (let path of paths) {
+      let state = atemstate;
+      if (path != 'info.lastTime') {
+        // console.log('atem path', path, state);
+        let parts = ['state'];
+        for (let a of path.split('.')) {
+          const parent = state;
+          if (Array.isArray(state)) {
+            state = state[+a];
           } else {
-            state = parent;
-            break;
+            state = state[a];
           }
+          if (typeof state === 'undefined') {
+            // console.log('undefined', parts, a);
+            if (a === 'ME') {
+              // XXX - maybe it should be fixed in atem-connection lib
+              a = 'mixEffects'
+              state = parent[a];
+            } else {
+              state = parent;
+              break;
+            }
+          }
+          parts.push(a);
         }
-        paths.push(a);
+      
+        console.log('changed', parts.join('.'))
+        broadcast(JSON.stringify({
+          path: parts.join('.'),
+          state: state
+        }));
       }
-    
-      // console.log('changed', paths.join('.'), state)
-      broadcast(JSON.stringify({
-        path: paths.join('.'),
-        state: state
-      }));
     }
   });
   atem.on('connected', () => {
@@ -100,53 +105,25 @@ app.ws('/ws', function (ws, req) {
   ws.send(JSON.stringify({ path: 'connected', state: switchers[0].connected }));
 
   ws.on('message', function incoming(message) {
-    /* JSON-RPC v2 compatible call */
     console.log(message.slice(0, 500));
-    const data = JSON.parse(message);
-    const method = data.method;
-    const params = data.params;
-    const atem = switchers[params.device || 0];
+    const [method, ...args] = JSON.parse(message);
+    const atem = switchers[0];
 
-    switch (method) {
-      case 'uploadMedia':
-        let matches = params.media.match(/^data:(\w+\/\w+);base64,(.*)$/);
-        if (matches[1] == 'image/png') {
-          const buffer = Buffer.from(matches[2], 'base64');
-          atem.uploadStill(data.index, buffer, data.name, data.description)
-          fs.writeFile("upload.png", buffer, "binary");
-        } else {
-          console.error('Uploaded image is not png');
-        }
-        break;
-      default:
-        const Command = Commands[method];
-        if (Command === undefined) {
-          console.error('Undefined command', method)
-          return;
-        };
-        const command = new Command();
-        if (params.mixEffect !== undefined){
-          command.mixEffect = params.mixEffect;
-          delete params.mixEffect;
-        }
-        if (params.upstreamKeyerId !== undefined){
-          command.upstreamKeyerId = params.upstreamKeyerId;
-          delete params.upstreamKeyerId;
-        }
-        if (params.downstreamKeyerId !== undefined){
-          command.downstreamKeyerId = params.downstreamKeyerId;
-          delete params.downstreamKeyerId;
-        }
-        if (params.index !== undefined){
-          command.index = params.index;
-          delete params.index;
-        }
-        if (params.mediaPlayerId !== undefined){
-          command.mediaPlayerId = params.mediaPlayerId;
-          delete params.mediaPlayerId;
-        }
-        command.updateProps(params);
-        atem.sendCommand(command);
+    if ('uploadStill' === method) {
+      let matches = args[1].match(/^data:(\w+\/\w+);base64,(.*)$/);
+      if (matches[1] == 'image/png') {
+        args[1] = Buffer.from(matches[2], 'base64');
+        fs.writeFile("upload.png", buffer, "binary");
+      } else {
+        console.error('Uploaded image is not png');
+        return;
+      }
+    }
+
+    try {
+      atem[method](...args);
+    } catch (error) {
+      console.error(error);
     }
   });
 });

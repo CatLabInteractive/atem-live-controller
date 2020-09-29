@@ -67,7 +67,7 @@ class AtemClient {
             visibleInputs[me] = meInputs = [];
 
             // standard inputs
-            for (let i = 1; i <= 10; i++) {
+            for (let i = 1; i <= 20; i++) {
                 input = this.state.inputs[i];
                 if (input && input.meAvailability & bitME) {
                     meInputs.push(i);
@@ -127,105 +127,102 @@ class AtemClient {
     }
 
     changeProgramInput(source, mixEffect) {
-        this.sendMessage({ method: 'ProgramInputCommand', params: { source, mixEffect } })
-        this.state.video.ME[0].programInput = source;
+        this.sendMessage(['changeProgramInput', source, mixEffect])
+        this.state.video.mixEffects[0].programInput = source;
     }
     changePreviewInput(source, mixEffect) {
-        this.sendMessage({ method: 'PreviewInputCommand', params: { source, mixEffect } })
-        this.state.video.ME[0].previewInput = source;
+        this.sendMessage(['changePreviewInput', source, mixEffect])
+        this.state.video.mixEffects[0].previewInput = source;
+    }
+    cut(mixEffect) {
+        this.sendMessage(['cut', mixEffect]);
     }
     autoTransition(mixEffect) {
-        this.sendMessage({ method: 'AutoTransitionCommand', params: { mixEffect } });
-    }
-    cutTransition(mixEffect) {
-        this.sendMessage({ method: 'CutCommand', params: { mixEffect } });
+        this.sendMessage(['autoTransition', mixEffect]);
     }
     fadeToBlack(mixEffect) {
-        this.sendMessage({ method: 'FadeToBlackAutoCommand', params: { mixEffect } });
+        this.sendMessage(['fadeToBlack', mixEffect]);
     }
 
-    previewTransition(mixEffect) {
-        const preview = !this.state.video.ME[mixEffect].transitionPreview;
-        this.sendMessage({ method: 'PreviewTransitionCommand', params: { preview, mixEffect } });
+    togglePreviewTransition(mixEffect) {
+        const on = !this.state.video.mixEffects[mixEffect].transitionPreview;
+        this.sendMessage(['previewTransition', on, mixEffect]);
     }
 
-    setTransitionPosition(handlePosition, mixEffect) {
-        this.sendMessage({ method: 'TransitionPositionCommand', params: { mixEffect, handlePosition } });
+    setTransitionPosition(position, mixEffect) {
+        this.sendMessage(['setTransitionPosition', position, mixEffect]);
     }
 
     setDownstreamKeyTie(tie, downstreamKeyerId) {
-        this.sendMessage({ method: 'DownstreamKeyTieCommand', params: { downstreamKeyerId, tie } });
+        this.sendMessage(['setDownstreamKeyTie', tie, downstreamKeyerId]);
     };
 
     setDownstreamKeyOnAir(onAir, downstreamKeyerId) {
-        this.sendMessage({ method: 'DownstreamKeyOnAirCommand', params: { downstreamKeyerId, onAir } });
+        this.sendMessage(['setDownstreamKeyOnAir', onAir, downstreamKeyerId]);
     };
 
     autoDownstreamKey(downstreamKeyerId, isTowardsOnAir) {
-        this.sendMessage({ method: 'DownstreamKeyAutoCommand', params: { downstreamKeyerId, isTowardsOnAir } });
+        this.sendMessage(['autoDownstreamKey', downstreamKeyerId, isTowardsOnAir]);
     }
 
     toggleUpstreamKeyNext(index, mixEffect) {
-        const selection = this.state.video.ME[mixEffect].transitionProperties.selection ^ (1 << index);
-        this.sendMessage({ method: 'TransitionPropertiesCommand', params: { selection, mixEffect } });
+        const nextSelection = this.state.video.mixEffects[mixEffect].transitionProperties.selection ^ (1 << index);
+        this.sendMessage(['setTransitionStyle', {nextSelection}, mixEffect]);
     }
 
-    setTransitionStyle(style, mixEffect) {
-        this.sendMessage({ method: 'TransitionPropertiesCommand', params: { style, mixEffect } });
+    setTransitionStyle(nextStyle, mixEffect) {
+        this.sendMessage(['setTransitionStyle', {nextStyle}, mixEffect]);
     }
 
     setUpstreamKeyerFly(flyEnabled, mixEffect, upstreamKeyerId) {
-        this.sendMessage({ method: 'MixEffectKeyTypeSetCommand', params: { flyEnabled, mixEffect, upstreamKeyerId } });
+        this.sendMessage(['setUpstreamKeyerType', {flyEnabled}, mixEffect, upstreamKeyerId]);
     }
 
     setUpstreamKeyerOnAir(onAir, mixEffect, upstreamKeyerId) {
-        this.sendMessage({
-            method: 'MixEffectKeyOnAirCommand',
-            params: { mixEffect, upstreamKeyerId, onAir }
-        })
+        this.sendMessage(['setUpstreamKeyerOnAir', onAir, mixEffect, upstreamKeyerId])
     }
 
     macroRun(index) {
         console.log("macroRun ", index);
-        this.sendMessage({ method: 'MacroActionCommand', params: { index, action: 0 } });
+        this.sendMessage(['macroRun', index]);
     }
     macroStop() {
-        this.sendMessage({ method: 'MacroActionCommand', params: { index: 0, action: 1 } });
+        this.sendMessage(['macroStop']);
     }
     macroStopRecord() {
-        this.sendMessage({ method: 'MacroActionCommand', params: { index: 0, action: 2 } });
+        this.sendMessage(['macroStopRecord']);
     }
     macroDelete(index) {
-        this.sendMessage({ method: 'MacroActionCommand', params: { index, action: 5 } });
+        this.sendMessage(['macroDelete', index]);
     }
     macroSetName(index, name) {
-        this.sendMessage({ method: 'MacroChangePropertiesCommand', params: { index, name } });
+        this.sendMessage({ method: 'MacroPropertiesCommand', params: { index, updateProps: {name} } });
+        this.sendMessage(['macroUpdateProperties', {name}, index]);
     }
-    macroRecord(index, name, description) {
-        this.sendMessage({ method: 'MacroRecordCommand', params: { index, name, description } });
+    macroStartRecord(index, name, description) {
+        this.sendMessage(['macroStartRecord', index, name, description]);
     }
     macroToggleLoop() {
-        const loop = !atem.state.macro.macroPlayer.loop;
-        this.sendMessage({ method: 'MacroRunChangeProperties', params: { loop } });
+        this.sendMessage(['macroSetLoop', !atem.state.macro.macroPlayer.loop]);
     }
 
     mediaPlayerStart(mediaPlayerId) {
-        this.sendMessage({ method: 'MediaPlayerStatusCommand', params: { mediaPlayerId, playing: 1 } });
+        this.sendMessage(['setMediaPlayerSettings', {playing: 1}, mediaPlayerId]);
     }
     mediaPlayerStop(mediaPlayerId) {
-        this.sendMessage({ method: 'MediaPlayerStatusCommand', params: { mediaPlayerId, playing: 0 } });
+        this.sendMessage(['setMediaPlayerSettings', {playing: 0}, mediaPlayerId]);
     }
     mediaPlayerToggleLoop(mediaPlayerId) {
         const loop = !atem.state.media.players[mediaPlayerId].loop;
-        this.sendMessage({ method: 'MediaPlayerStatusCommand', params: { mediaPlayerId, loop } });
+        this.sendMessage(['setMediaPlayerSettings', {loop}, mediaPlayerId]);
     }
     setPlayerStillSource(stillIndex, mediaPlayerId) {
-        this.sendMessage({ method: 'MediaPlayerSourceCommand', params: { mediaPlayerId, stillIndex, sourceType: 1 } });
+        this.sendMessage(['setMediaPlayerSource', {stillIndex, sourceType: 1}, mediaPlayerId]);
     }
     setPlayerClipSource(clipIndex, mediaPlayerId) {
-        this.sendMessage({ method: 'MediaPlayerSourceCommand', params: { mediaPlayerId, clipIndex, sourceType: 2 } });
+        this.sendMessage(['setMediaPlayerSource', {stillIndex, sourceType: 1}, mediaPlayerId]);
     }
-    uploadMediaFile(file, index) {
+    uploadStill(file, index) {
         let img, reader;
         let atem = this;
         let [width, height] = getResolution(this.state.settings.videoMode)
@@ -242,15 +239,7 @@ class AtemClient {
                     ctx.drawImage(img, 0, 0, width, height);
                     console.log('drawing Image', width, height)
                     // upload to server
-                    atem.sendMessage({
-                        method: "uploadMedia",
-                        params: {
-                            device: atem.state.device,
-                            index: index || 0,
-                            name: file.name,
-                            media: canvas.toDataURL("image/png")
-                        }
-                    });
+                    atem.sendMessage(["uploadStill", index || 0, canvas.toDataURL("image/png"), file.name, '']);
                 }
                 img.src = e.target.result;
             }

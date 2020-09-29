@@ -57,12 +57,12 @@ Then go to this address in your browser: `http://localhost:8080/` or `http://hos
 
 1. Macros
     - [x]  12-16 compact buttons to trigger Macros.
-    - [ ]  A method to save a macro?
-    - [ ]  Method to change Macro button label or fetch button name from ATEM?
+    - [~]  A method to save a macro?
+    - [~]  Method to change Macro button label or fetch button name from ATEM?
 2. Media Players/HyperDeck Control
-    - [ ]  Control Media player clip selection for Media Players 1-4
-    - [ ]  Play/pause control
-    - [ ]  Ability to upload media?
+    - [x]  Control Media player clip selection for Media Players 1-4
+    - [x]  Play/pause control
+    - [~]  Ability to upload media?
     - [ ]  Same abilities for HyperDeck control?
 3. Integrate additional controls
     - [x]  Add tabs for other ME’s of the Constellation (tab for ME/2.ME/3 and ME/4) {"device":1} , {"device":2},{"device":3}
