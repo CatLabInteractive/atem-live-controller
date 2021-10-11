@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { ATEM } from "./atem.js";
   import Feather from "./Feather.svelte";
+  import WebMidi from "webmidi";
 
   let switchers = [];
 
@@ -68,7 +69,72 @@
   onMount(() => {
     doConnect();
     document.addEventListener("keyup", onKeyUp);
+    midiConnect();
   });
+
+  function midiConnect() {
+
+    WebMidi.enable(function (err) {
+      if (err) {
+        console.log("WebMidi could not be enabled.", err);
+        return;
+      }
+
+      WebMidi.inputs.forEach(function(input) {
+        addMidiInput(input);
+      });
+    });
+
+  }
+
+  var midiLearningButton = null;
+  var midiMap = {};
+
+  function addMidiInput(input) {
+    input.addListener("noteon", "all", function(e) {
+
+      var noteNumber = e.note.number;
+      if (midiLearningButton) {
+        midiLearningButton(noteNumber);
+        midiLearningButton = null;
+        return;
+      }
+
+      if (typeof(midiMap[noteNumber]) !== 'undefined') {
+        midiMap[noteNumber].atem.runMacro(midiMap[noteNumber].macro)
+      }
+    });
+  }
+
+  function midiLearn(atem, macroId) {
+
+    document.getElementById('macro-' + macroId + '-learn').innerHTML = 'Learning...';
+    midiLearningButton = function(note) {
+      console.log('Assigning note ' + note);
+
+      midiMap[note] = {
+        macro: macroId,
+        atem : atem
+      }
+
+      document.getElementById('macro-' + macroId + '-learn').innerHTML = 'Midi learn';
+      document.getElementById('macro-' + macroId).innerHTML = 'Midi note ' + note;
+    };
+  }
+
+  function midiClear(atem, macroId) {
+    for (var k in midiMap) {
+      if (midiMap.hasOwnProperty(k)) {
+        if (midiMap[k].macro === macroId && midiMap[k].atem === atem) {
+          delete midiMap[k];
+        }
+      }
+
+      console.log(midiMap);
+    }
+
+    document.getElementById('macro-' + macroId).innerHTML = '';
+  }
 </script>
 
 {#each switchers as atem}
@@ -274,14 +340,21 @@
   <h2>Macros</h2>
   <div class="well">
     {#if atem.state.macros}
-    {#each Object.entries(atem.state.macros) as macro }
-    <div class="button button-wide"
-      class:red={false}
-      on:click={e=>atem.runMacro(macro[0])}
-      title={macro[1].description}>
-    <p>{macro[1].name}</p>
-    </div>
-    {/each}
+      {#each Object.entries(atem.state.macros) as macro }
+        <div class="button button-wide"
+          class:red={false}
+          on:click={e=>atem.runMacro(macro[0])}
+          title={macro[1].description}>
+        <p>{macro[1].name}</p>
+
+        </div>
+
+        <div class="midi">
+          <span id="macro-{macro[0]}"></span><br />
+          <button on:click={e=>midiLearn(atem, macro[0])} id="macro-{macro[0]}-learn">Midi learn</button><br />
+          <button on:click={e=>midiClear(atem, macro[0])} id="macro-{macro[0]}-clear">Midi clear</button>
+        </div>
+      {/each}
     {/if}
   </div>
 </div> <!-- screen macros -->
