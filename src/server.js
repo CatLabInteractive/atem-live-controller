@@ -1,6 +1,6 @@
 const express    = require('express');
 const fileUpload = require('express-fileupload');
-const ATEM = require('applest-atem');
+const ATEM = require('node-atem-control');
 const FileUploader = ATEM.FileUploader
 const config     = require('../config.json');
 const fs         = require('fs');

@@ -12,7 +12,7 @@
   "author": "Filip Hanes <filip.hanes@protonmail.com>",
   "license": "MIT",
   "dependencies": {
-    "applest-atem": "git@github.com:timhodson/node-applest-atem.git#get-macro-details",
+    "node-atem-control": "^0.2.4",
     "express": "^4.17.1",
     "express-fileupload": "^1.1.7-alpha.3",
     "express-ws": "^4.0.0",
