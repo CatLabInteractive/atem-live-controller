@@ -118,7 +118,15 @@
       }
 
       document.getElementById('macro-' + macroId + '-learn').innerHTML = 'Midi learn';
-      document.getElementById('macro-' + macroId).innerHTML = 'Midi note ' + note;
+
+      // show all midi notes
+      var notes = [];
+      for (var k in midiMap) {
+        if (midiMap.hasOwnProperty(k) && midiMap[k].macro === macroId) {
+          notes.push(k);
+        }
+      }
+      document.getElementById('macro-' + macroId).innerHTML = 'Note ' + notes.join(',');
     };
   }
 
