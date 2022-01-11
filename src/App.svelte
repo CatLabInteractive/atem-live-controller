@@ -89,6 +89,7 @@
 
   var midiLearningButton = null;
   var midiMap = {};
+  var midiPaused = false;
 
   function addMidiInput(input) {
     input.addListener("noteon", "all", function(e) {
@@ -101,9 +102,21 @@
       }
 
       if (typeof(midiMap[noteNumber]) !== 'undefined') {
-        midiMap[noteNumber].atem.runMacro(midiMap[noteNumber].macro)
+        if (!midiPaused) {
+          midiMap[noteNumber].atem.runMacro(midiMap[noteNumber].macro)
+        }
       }
     });
+  }
+
+  function pauseMidi(atem) {
+    midiPaused = true;
+    document.getElementById('midi-status').innerHTML = 'Midi input paused';
+  }
+
+  function resumeMidi(atem) {
+    midiPaused = false;
+    document.getElementById('midi-status').innerHTML = 'Midi input active';
   }
 
   function midiLearn(atem, macroId) {
@@ -366,5 +379,11 @@
     {/if}
   </div>
 </div> <!-- screen macros -->
+
+<div id="midi" class="screen">
+    <p id="midi-status">Active</p>
+     <button on:click={e=>pauseMidi(atem)} id="macro-pause">Pause midi control</button><br />
+     <button on:click={e=>resumeMidi(atem)} id="macro-pause">Resume midi control</button><br />
+</div>
 
 {/each}
