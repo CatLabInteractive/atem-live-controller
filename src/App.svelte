@@ -156,6 +156,27 @@
 
     document.getElementById('macro-' + macroId).innerHTML = '';
   }
+
+  var backgroundWindow = null;
+  var videoToken = null;
+  function openBackground() {
+    backgroundWindow = window.open('https://regie.catlab.eu/videoAtemStage.html?token=' + videoToken)
+    //backgroundWindow = window.open('http://regie.catlab.local.com/videoAtemStage.html?token=' + videoToken)
+  }
+
+  function runMacro(atem, macro) {
+    console.log(macro);
+    try {
+      if (backgroundWindow) {
+        backgroundWindow.postMessage(macro[1].name, '*');
+      }
+    } catch (e) {
+      // do nothing
+      console.log(e);
+    }
+
+    return atem.runMacro(macro[0])
+  }
 </script>
 
 {#each switchers as atem}
@@ -364,7 +385,7 @@
       {#each Object.entries(atem.state.macros) as macro }
         <div class="button button-wide"
           class:red={false}
-          on:click={e=>atem.runMacro(macro[0])}
+          on:click={e=>runMacro(atem, macro)}
           title={macro[1].description}>
         <p>{macro[1].name}</p>
 
@@ -381,9 +402,16 @@
 </div> <!-- screen macros -->
 
 <div id="midi" class="screen">
-    <p id="midi-status">Active</p>
+    <p id="midi-status">Active</p>openPopup
      <button on:click={e=>pauseMidi(atem)} id="macro-pause">Pause midi control</button><br />
      <button on:click={e=>resumeMidi(atem)} id="macro-pause">Resume midi control</button><br />
 </div>
 
+<div id="popupBackground" class="screen">
+  <h2>Greenscreen background</h2>
+  Regie code: <input id="popupBackgroundVideoToken" bind:value={videoToken} /><br />
+  <button on:click={e=>openBackground()} id="openPopup">Open video popup</button><br />
+</div>
+
 {/each}
+
