@@ -128,4 +128,5 @@ app.ws('/ws', function(ws, req) {
   });
 });
 
+console.log('Listening on port ' + config.server.port);
 app.listen(config.server.port, config.server.host);
