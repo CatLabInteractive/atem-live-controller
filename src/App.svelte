@@ -25,8 +25,8 @@
     });
     ws.addEventListener("message", function(event) {
       let data = JSON.parse(event.data);
+
       let device = data.device || 0;
-      console.log(data);
       switch (data.method) {
         case 'connect':
           switchers[device].connected = true;
@@ -34,6 +34,19 @@
         case 'disconnect':
           switchers[device].connected = false;
         break;
+
+        case 'ranMacro':
+          try {
+            var macro = switchers[device].state.macros[parseInt(data.macro)];
+            if (backgroundWindow) {
+              backgroundWindow.postMessage(macro.name, '*');
+            }
+          } catch (e) {
+            // do nothing
+            console.log(e);
+          }
+          break;
+
         default:
           switchers[device].connected = true;
           switchers[device].state = data;
@@ -165,16 +178,6 @@
   }
 
   function runMacro(atem, macro) {
-    console.log(macro);
-    try {
-      if (backgroundWindow) {
-        backgroundWindow.postMessage(macro[1].name, '*');
-      }
-    } catch (e) {
-      // do nothing
-      console.log(e);
-    }
-
     return atem.runMacro(macro[0])
   }
 </script>

@@ -112,6 +112,10 @@ app.ws('/ws', function(ws, req) {
       break;
       case 'runMacro':
         atem[method](params.number);
+
+        // also broadcast
+        broadcast(JSON.stringify({ method: 'ranMacro', macro: params.number }));
+
       break;
       case 'uploadMedia':
         let matches = params.media.match(/^data:(\w+\/\w+);base64,(.*)$/);
